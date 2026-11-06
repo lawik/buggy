@@ -1,0 +1,57 @@
+defmodule Buggy.Application do
+  # See https://elixir.hexdocs.pm/Application.html
+  # for more information on OTP Applications
+  @moduledoc false
+
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children =
+      [
+        # Children for all targets
+        # Starts a worker by calling: Buggy.Worker.start_link(arg)
+        # {Buggy.Worker, arg},
+        BuggyWeb.Telemetry,
+        {DNSCluster, [query: Application.get_env(:buggy, :dns_cluster_query) || :ignore]},
+        {Phoenix.PubSub, [name: Buggy.PubSub]},
+        BuggyWeb.Endpoint,
+        {BB.MCP.Server, [transport: :streamable_http, streamable_http: [port: 4000]]},
+        {Buggy.Robot, robot_opts()}
+      ] ++ target_children()
+
+    # See https://elixir.hexdocs.pm/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: Buggy.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  # List all child processes to be supervised
+  if Mix.target() == :host do
+    defp target_children() do
+      [
+        # Children that only run on the host during development or test.
+        # In general, prefer using `config/host.exs` for differences.
+        #
+        # Starts a worker by calling: Host.Worker.start_link(arg)
+        # {Host.Worker, arg},
+      ]
+    end
+  else
+    defp target_children() do
+      [
+        # Children for all targets except host
+        # Starts a worker by calling: Target.Worker.start_link(arg)
+        # {Target.Worker, arg},
+      ]
+    end
+  end
+
+  defp robot_opts do
+    if System.get_env("SIMULATE") do
+      [simulation: :kinematic]
+    else
+      Application.get_env(:buggy, Buggy.Robot, [])
+    end
+  end
+end
