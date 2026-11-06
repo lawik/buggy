@@ -41,7 +41,7 @@ config :buggy,
        live_view: [signing_salt: "EWbMO9h7"]
 
 config :bb_mcp, robots: [Buggy.Robot]
-config :buggy, Buggy.Robot, params: [config: [pca9685: [bus: "i2c-1"]]]
+config :buggy, Buggy.Robot, params: [config: [motorcontrol: [bus: "i2c-1"]]]
 
 # Enable the Nerves integration with Mix
 Application.start(:nerves_bootstrap)
