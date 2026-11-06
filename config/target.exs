@@ -50,6 +50,29 @@ config :nerves_ssh,
 # Update regulatory_domain to your 2-letter country code E.g., "US"
 #
 # See https://github.com/nerves-networking/vintage_net for more information
+#
+# WiFi credentials come from the environment when the firmware is built:
+#
+#     export NERVES_WIFI_SSID="my network"
+#     export NERVES_WIFI_PASSPHRASE="secret"
+#
+# Leave the passphrase unset for an open network. With no SSID, wlan0 is set
+# up without a network and can be configured on the device instead.
+wifi_networks =
+  case {System.get_env("NERVES_WIFI_SSID"), System.get_env("NERVES_WIFI_PASSPHRASE")} do
+    {ssid, _} when ssid in [nil, ""] -> []
+    {ssid, psk} when psk in [nil, ""] -> [%{key_mgmt: :none, ssid: ssid}]
+    {ssid, psk} -> [%{key_mgmt: :wpa_psk, ssid: ssid, psk: psk}]
+  end
+
+if wifi_networks == [] do
+  IO.warn(
+    "NERVES_WIFI_SSID is not set, so this firmware has no WiFi network configured. " <>
+      "A device that is only on WiFi will drop off the network when it boots it.",
+    []
+  )
+end
+
 config :vintage_net,
   regulatory_domain: "00",
   config: [
@@ -59,8 +82,23 @@ config :vintage_net,
        type: VintageNetEthernet,
        ipv4: %{method: :dhcp}
      }},
-    {"wlan0", %{type: VintageNetWiFi}}
+    {"wlan0",
+     %{
+       type: VintageNetWiFi,
+       ipv4: %{method: :dhcp},
+       vintage_net_wifi: %{networks: wifi_networks}
+     }}
   ]
+
+# Serve the BB dashboard (and the MCP endpoint at /mcp) on port 80 so it is
+# reachable at http://<hostname>.local/. Code reloading and asset watchers are
+# host-only (see dev.exs); assets are built into priv/static before `mix firmware`.
+config :buggy, BuggyWeb.Endpoint,
+  http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: 80],
+  server: true,
+  code_reloader: false,
+  check_origin: false,
+  secret_key_base: "MWhOw1NWXtYfSDfTq6dSAxnquFPUbupDeZcH6toxANRvX2v2K0qlAK8EjLjm+1mN"
 
 config :mdns_lite,
   # The `hosts` key specifies what hostnames mdns_lite advertises.  `:hostname`
@@ -85,6 +123,11 @@ config :mdns_lite,
       protocol: "sftp-ssh",
       transport: "tcp",
       port: 22
+    },
+    %{
+      protocol: "http",
+      transport: "tcp",
+      port: 80
     },
     %{
       protocol: "epmd",

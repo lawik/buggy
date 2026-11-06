@@ -61,7 +61,9 @@ defmodule Buggy.MixProject do
       {:bb_mcp, "~> 0.3"},
       {:bb_tui, "~> 0.9"},
       {:nx_eigen, "~> 0.2"},
-      {:bb_servo_pca9685, "~> 0.10"},
+      # Local fork: fixes the controller for the `bb` context shape (no `:name`
+      # key) and routes its disarm through the robot registry.
+      {:bb_servo_pca9685, path: "../bb_servo_pca9685"},
       {:bb, "~> 0.33"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       # Dependencies for all targets

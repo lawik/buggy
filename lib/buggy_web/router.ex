@@ -14,6 +14,13 @@ defmodule BuggyWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # MCP over Streamable HTTP. BB.MCP.Server's transport doesn't open a
+  # listener of its own, so it has to be mounted here.
+  scope "/" do
+    import BB.MCP.Router
+    bb_mcp("/mcp")
+  end
+
   scope "/" do
     pipe_through([:browser])
     import BB.LiveView.Router

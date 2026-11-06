@@ -16,7 +16,10 @@ defmodule Buggy.Application do
         {DNSCluster, [query: Application.get_env(:buggy, :dns_cluster_query) || :ignore]},
         {Phoenix.PubSub, [name: Buggy.PubSub]},
         BuggyWeb.Endpoint,
-        {BB.MCP.Server, [transport: :streamable_http, streamable_http: [port: 4000]]},
+        # Served at /mcp by the router. `start: true` is needed because Anubis
+        # otherwise only starts when `:phoenix, :serve_endpoints` is set, which
+        # per-endpoint `server: true` (as on the device) doesn't do.
+        {BB.MCP.Server, [transport: {:streamable_http, start: true}]},
         {Buggy.Robot, robot_opts()}
       ] ++ target_children()
 
