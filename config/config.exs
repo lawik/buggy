@@ -29,6 +29,20 @@ config :phoenix, json_library: Jason
 config :logger,
   default_formatter: [format: "$time $metadata[$level] $message\n", metadata: [:request_id]]
 
+# The camera's video stack logs every pipeline step and ICE check at debug,
+# which fills the device's RingLogger buffer in seconds and pushes out
+# everything else. Logger has no per-application setting in config, so
+# Buggy.Application applies these at boot.
+config :buggy, :log_levels,
+  membrane_core: :info,
+  membrane_webrtc_plugin: :info,
+  membrane_rtp_plugin: :info,
+  membrane_h26x_plugin: :info,
+  ex_webrtc: :info,
+  ex_ice: :info,
+  ex_dtls: :info,
+  ex_libsrtp: :info
+
 config :buggy,
        BuggyWeb.Endpoint,
        url: [host: "localhost"],

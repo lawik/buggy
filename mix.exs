@@ -57,12 +57,39 @@ defmodule Buggy.MixProject do
       {:bandit, "~> 1.5"},
       {:phoenix, "~> 1.7"},
       {:phx_install, "~> 0.1", only: [:dev, :test], runtime: false},
-      {:bb_liveview, "~> 0.3"},
+      # Local fork: adds a 3D | Images tab to the visualisation panel for image
+      # sensors, and stops the event stream dumping raw binaries into the page.
+      {:bb_liveview, path: "../bb_liveview"},
       {:bb_mcp, "~> 0.3"},
+      # Camera: rpicam-vid's hardware H.264 through Membrane, to the dashboard
+      # over WebRTC.
+      {:membrane_core, "~> 1.2"},
+      {:membrane_h26x_plugin, "~> 0.11"},
+      {:membrane_webrtc_plugin, "~> 0.26"},
+      # Local fork: builds libsrtp from vendored source, as there's no
+      # precompiled libsrtp for the Pi 3's 32-bit ARM and the Nerves system
+      # doesn't ship one.
+      {:ex_libsrtp, path: "../ex_libsrtp", override: true},
+      # Local fork: bundlex archives static libs with a bare `ar`, and on a Mac
+      # that's Apple's, which leaves an empty archive of the cross-compiled
+      # objects. Every NIF that links one (ex_dtls through unifex, shmex)
+      # then fails to load on the device, and WebRTC with it. The fork uses
+      # Nerves's `$AR`.
+      {:bundlex, path: "../bundlex", override: true},
+      {:video_interop, "~> 0.1.2"},
+      # Local: H.264 decoding on the Pi's bcm2835-codec, for the camera's raw
+      # frames. Rustler builds its NIF into that repo's priv/native, shared by
+      # every project that uses it, so run
+      # `MIX_TARGET=rpi3 mix deps.compile membrane_v4l2_decoder --force`
+      # before `mix firmware` if anything else built it since.
+      {:membrane_v4l2_decoder, path: "../membrane_v4l2_decoder"},
       {:bb_tui, "~> 0.9"},
       {:nx_eigen, "~> 0.2"},
-      # Local fork: fixes the controller for the `bb` context shape (no `:name`
-      # key) and routes its disarm through the robot registry.
+      # Local fork, on its `dev` branch (each change also has its own branch
+      # for upstreaming): the controller takes its name from the `bb` path and
+      # disarms through the robot registry, min/max pulse changes apply live
+      # (the steering calibration), and a 0µs pulse turns the channel off
+      # instead of erroring, which made every disarm fail.
       {:bb_servo_pca9685, path: "../bb_servo_pca9685"},
       {:bb, "~> 0.33"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
@@ -103,9 +130,10 @@ defmodule Buggy.MixProject do
   def release do
     [
       overwrite: true,
-      # Erlang distribution is not started automatically.
-      # See https://nerves-pack.hexdocs.pm/readme.html#erlang-distribution
-      cookie: "#{@app}_cookie",
+      # Erlang distribution is started at boot (see Buggy.Distribution), so anyone on
+      # the network with this cookie gets a shell on the device. Set
+      # BUGGY_COOKIE when building to use your own.
+      cookie: System.get_env("BUGGY_COOKIE", "#{@app}_cookie"),
       include_erts: &Nerves.Release.erts/0,
       steps: [&Nerves.Release.init/1, :assemble],
       strip_beams: Mix.env() == :prod or [keep: ["Docs"]]

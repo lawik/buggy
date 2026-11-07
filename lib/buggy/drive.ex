@@ -75,6 +75,29 @@ defmodule Buggy.Drive do
     end
   end
 
+  # Each tick's throttle runs this long. bb_tui ticks every 50ms while a key is
+  # held, so this rides over jitter but stops the motor quickly if the ticks
+  # stop arriving (connection lost, or a tick landing after the release).
+  @drive_tick_ms 250
+
+  @doc """
+  Hold-to-drive tick from `bb_tui` (see `Buggy.TUI`): `throttle` and `turn`
+  in -1.0..1.0, with `turn` positive to the left as bb_tui sends it.
+  """
+  @spec drive_tick(module(), number(), number()) :: :ok
+  def drive_tick(robot, throttle, turn) do
+    _ = steer(-turn, robot)
+    _ = throttle(throttle, @drive_tick_ms, robot)
+    :ok
+  end
+
+  @doc "bb_tui calls this when the drive keys are released."
+  @spec drive_release(module()) :: :ok
+  def drive_release(robot) do
+    _ = stop(robot)
+    :ok
+  end
+
   defp limits(robot, joint_name) do
     {:ok, joint} = BB.Robot.get_joint(robot.robot(), joint_name)
     joint.limits

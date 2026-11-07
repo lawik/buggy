@@ -24,7 +24,12 @@ defmodule BuggyWeb.Router do
   scope "/" do
     pipe_through([:browser])
     import BB.LiveView.Router
-    bb_dashboard("/", robot: Buggy.Robot)
+    # Hold-to-drive in the dashboard, with the same functions bb_tui's drive
+    # extension (Buggy.TUI) uses.
+    bb_dashboard("/",
+      robot: Buggy.Robot,
+      drive: [publish: {Buggy.Drive, :drive_tick}, stop: {Buggy.Drive, :drive_release}]
+    )
   end
 
   scope "/api", BuggyWeb do
