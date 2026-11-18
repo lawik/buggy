@@ -62,7 +62,9 @@ defmodule Buggy.Application do
         # Children for all targets except host
         # Starts a worker by calling: Target.Worker.start_link(arg)
         # {Target.Worker, arg},
-        Buggy.Distribution
+        Buggy.Distribution,
+        # After the robot, which it drives.
+        Buggy.BLE
       ]
     end
 

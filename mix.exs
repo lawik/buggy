@@ -23,6 +23,7 @@ defmodule Buggy.MixProject do
       app: @app,
       version: @version,
       elixir: "~> 1.20",
+      elixirc_paths: elixirc_paths(Mix.env()),
       archives: [nerves_bootstrap: "~> 1.17"],
       listeners: listeners(Mix.target(), Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -39,6 +40,10 @@ defmodule Buggy.MixProject do
       mod: {Buggy.Application, []}
     ]
   end
+
+  # Test robots and stand-ins shared between tests.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   def cli do
     [preferred_targets: [run: :host, test: :host]]
@@ -61,6 +66,11 @@ defmodule Buggy.MixProject do
       # sensors, and stops the event stream dumping raw binaries into the page.
       {:bb_liveview, path: "../bb_liveview"},
       {:bb_mcp, "~> 0.3"},
+      # Bluetooth LE (see Buggy.BLE), talking HCI straight to the Pi 3's radio
+      # over its UART: the rpi3 system's kernel has no Bluetooth and there's no
+      # BlueZ. Only started on the device, as a temporary application (see
+      # release/0).
+      {:blue_heron, "~> 0.5.4", runtime: Mix.target() != :host},
       # Camera: rpicam-vid's hardware H.264 through Membrane, to the dashboard
       # over WebRTC.
       {:membrane_core, "~> 1.2"},
@@ -135,6 +145,11 @@ defmodule Buggy.MixProject do
       # BUGGY_COOKIE when building to use your own.
       cookie: System.get_env("BUGGY_COOKIE", "#{@app}_cookie"),
       include_erts: &Nerves.Release.erts/0,
+      # Applications are permanent by default, so BlueHeron's supervisor giving
+      # up would take the node down and reboot the car, leaving the PCA9685
+      # repeating its last pulses meanwhile. Temporary, it just stops;
+      # Buggy.BLE starts it again.
+      applications: [blue_heron: :temporary],
       steps: [&Nerves.Release.init/1, :assemble],
       strip_beams: Mix.env() == :prod or [keep: ["Docs"]]
     ]

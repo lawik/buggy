@@ -41,7 +41,9 @@ config :buggy, :log_levels,
   ex_webrtc: :info,
   ex_ice: :info,
   ex_dtls: :info,
-  ex_libsrtp: :info
+  ex_libsrtp: :info,
+  # Logs every HCI event and GATT request at info.
+  blue_heron: :warning
 
 config :buggy,
        BuggyWeb.Endpoint,

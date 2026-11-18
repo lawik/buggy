@@ -100,6 +100,12 @@ config :buggy, BuggyWeb.Endpoint,
   check_origin: false,
   secret_key_base: "MWhOw1NWXtYfSDfTq6dSAxnquFPUbupDeZcH6toxANRvX2v2K0qlAK8EjLjm+1mN"
 
+# Bluetooth LE (see Buggy.BLE): BlueHeron speaks HCI to the Pi 3's radio on
+# the mini UART, where the system's miniuart-bt overlay puts it (with
+# core_freq=250 to keep its baud rate steady).
+config :blue_heron,
+  transport: [device: "/dev/ttyS0", speed: 115_200, flow_control: :hardware]
+
 config :mdns_lite,
   # The `hosts` key specifies what hostnames mdns_lite advertises.  `:hostname`
   # advertises the device's hostname.local. For the official Nerves systems, this
