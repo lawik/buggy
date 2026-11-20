@@ -62,9 +62,12 @@ defmodule Buggy.MixProject do
       {:bandit, "~> 1.5"},
       {:phoenix, "~> 1.7"},
       {:phx_install, "~> 0.1", only: [:dev, :test], runtime: false},
-      # Local fork: adds a 3D | Images tab to the visualisation panel for image
-      # sensors, and stops the event stream dumping raw binaries into the page.
-      {:bb_liveview, path: "../bb_liveview"},
+      # Fork, on its `dev` branch (each change also has its own branch for
+      # upstreaming): adds a 3D | Images tab to the visualisation panel for
+      # image sensors, playing WebRTC video sources, and a Drive widget; the
+      # event stream stops dumping raw binaries into the page and keeps the
+      # last of a burst; parameter inputs refresh when a value changes.
+      {:bb_liveview, github: "lawik/bb_liveview", branch: "dev"},
       {:bb_mcp, "~> 0.3"},
       # Bluetooth LE (see Buggy.BLE), talking HCI straight to the Pi 3's radio
       # over its UART: the rpi3 system's kernel has no Bluetooth and there's no
@@ -76,32 +79,28 @@ defmodule Buggy.MixProject do
       {:membrane_core, "~> 1.2"},
       {:membrane_h26x_plugin, "~> 0.11"},
       {:membrane_webrtc_plugin, "~> 0.26"},
-      # Local fork: builds libsrtp from vendored source, as there's no
-      # precompiled libsrtp for the Pi 3's 32-bit ARM and the Nerves system
-      # doesn't ship one.
-      {:ex_libsrtp, path: "../ex_libsrtp", override: true},
-      # Local fork: bundlex archives static libs with a bare `ar`, and on a Mac
+      # Fork: builds libsrtp from vendored source, as there's no precompiled
+      # libsrtp for the Pi 3's 32-bit ARM and the Nerves system doesn't ship
+      # one.
+      {:ex_libsrtp, github: "lawik/ex_libsrtp", branch: "vendored-libsrtp", override: true},
+      # Fork: bundlex archives static libs with a bare `ar`, and on a Mac
       # that's Apple's, which leaves an empty archive of the cross-compiled
       # objects. Every NIF that links one (ex_dtls through unifex, shmex)
       # then fails to load on the device, and WebRTC with it. The fork uses
       # Nerves's `$AR`.
-      {:bundlex, path: "../bundlex", override: true},
+      {:bundlex, github: "lawik/bundlex", branch: "fix/cross-ar", override: true},
       {:video_interop, "~> 0.1.2"},
-      # Local: H.264 decoding on the Pi's bcm2835-codec, for the camera's raw
-      # frames. Rustler builds its NIF into that repo's priv/native, shared by
-      # every project that uses it, so run
-      # `MIX_TARGET=rpi3 mix deps.compile membrane_v4l2_decoder --force`
-      # before `mix firmware` if anything else built it since.
-      {:membrane_v4l2_decoder, path: "../membrane_v4l2_decoder"},
+      # H.264 decoding on the Pi's bcm2835-codec, for the camera's raw frames.
+      {:membrane_v4l2_decoder, github: "lawik/membrane_v4l2_decoder", branch: "pi3"},
       {:bb_tui, "~> 0.9"},
       {:nx_eigen, "~> 0.2"},
-      # Local fork, on its `dev` branch (each change also has its own branch
-      # for upstreaming): the controller takes its name from the `bb` path and
+      # Fork, on its `dev` branch (each change also has its own branch for
+      # upstreaming): the controller takes its name from the `bb` path and
       # disarms through the robot registry, min/max pulse changes apply live
       # (the steering calibration), a 0µs pulse turns the channel off
       # instead of erroring, which made every disarm fail, and a center_pulse
       # option trims straight ahead separately from the two full locks.
-      {:bb_servo_pca9685, path: "../bb_servo_pca9685"},
+      {:bb_servo_pca9685, github: "lawik/bb_servo_pca9685", branch: "dev"},
       {:bb, "~> 0.33"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       # Dependencies for all targets
