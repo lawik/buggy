@@ -98,8 +98,9 @@ defmodule Buggy.MixProject do
       # Local fork, on its `dev` branch (each change also has its own branch
       # for upstreaming): the controller takes its name from the `bb` path and
       # disarms through the robot registry, min/max pulse changes apply live
-      # (the steering calibration), and a 0µs pulse turns the channel off
-      # instead of erroring, which made every disarm fail.
+      # (the steering calibration), a 0µs pulse turns the channel off
+      # instead of erroring, which made every disarm fail, and a center_pulse
+      # option trims straight ahead separately from the two full locks.
       {:bb_servo_pca9685, path: "../bb_servo_pca9685"},
       {:bb, "~> 0.33"},
       {:igniter, "~> 0.6", only: [:dev, :test]},

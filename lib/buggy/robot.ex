@@ -6,9 +6,12 @@ defmodule Buggy.Robot do
   @steering_channel 1
   @throttle_channel 0
 
-  # Steering full-lock pulses are the calibration.steering_*_pulse parameters,
-  # adjustable live: hold full lock (`steer -1.0` / `1.0`) and move the pulse
-  # until the wheels just reach their stop. The ESC's are calibration.esc_*:
+  # Steering pulses are the calibration.steering_*_pulse parameters, adjustable
+  # live: hold full lock (`steer -1.0` / `1.0`) and move the left or right pulse
+  # until the wheels just reach their stop, and hold `steer 0.0` and move the
+  # centre pulse until they point straight and the servo is quiet. Each side
+  # maps from the centre out to its own lock, so the three are independent. The
+  # ESC's are calibration.esc_*:
   # trim neutral (written straight away, even disarmed) until the ESC stops
   # humming and arms.
 
@@ -175,6 +178,7 @@ defmodule Buggy.Robot do
            channel: @steering_channel,
            controller: :pca9685,
            min_pulse: param([:calibration, :steering_right_pulse]),
+           center_pulse: param([:calibration, :steering_center_pulse]),
            max_pulse: param([:calibration, :steering_left_pulse])}
         )
 
@@ -426,6 +430,14 @@ defmodule Buggy.Robot do
         min: 500,
         max: 2500,
         doc: "Steering servo pulse (µs) at full left lock"
+      )
+
+      param(:steering_center_pulse,
+        type: :integer,
+        default: 1500,
+        min: 500,
+        max: 2500,
+        doc: "Steering servo pulse (µs) for straight ahead"
       )
 
       param(:steering_right_pulse,

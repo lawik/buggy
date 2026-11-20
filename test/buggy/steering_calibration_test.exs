@@ -37,6 +37,7 @@ defmodule Buggy.SteeringCalibrationTest do
              channel: 1,
              controller: :pwm,
              min_pulse: param([:calibration, :steering_right_pulse]),
+             center_pulse: param([:calibration, :steering_center_pulse]),
              max_pulse: param([:calibration, :steering_left_pulse])}
           )
 
@@ -59,6 +60,7 @@ defmodule Buggy.SteeringCalibrationTest do
       group :calibration do
         param(:steering_left_pulse, type: :integer, default: 1800, min: 500, max: 2500)
         param(:steering_right_pulse, type: :integer, default: 1200, min: 500, max: 2500)
+        param(:steering_center_pulse, type: :integer, default: 1500, min: 500, max: 2500)
       end
     end
   end
@@ -81,11 +83,33 @@ defmodule Buggy.SteeringCalibrationTest do
     :ok = BB.Parameter.set(Robot, [:calibration, :steering_left_pulse], 2000)
     assert_receive {:pulse, 1, 2000}
 
-    # The right lock uses the new right pulse; centre is now their midpoint.
+    # The right lock uses the new right pulse, and centre stays where it was.
     :ok = BB.Parameter.set(Robot, [:calibration, :steering_right_pulse], 1000)
     {:ok, _} = Buggy.Drive.steer(1.0, Robot)
     assert_receive {:pulse, 1, 1000}
     {:ok, _} = Buggy.Drive.steer(0.0, Robot)
     assert_receive {:pulse, 1, 1500}
+  end
+
+  test "centre is its own parameter, live, and each side maps out from it" do
+    {:ok, _} = Buggy.Drive.steer(0.0, Robot)
+    assert_receive {:pulse, 1, 1500}
+
+    # Holding straight ahead, move the centre: the servo moves at once.
+    :ok = BB.Parameter.set(Robot, [:calibration, :steering_center_pulse], 1600)
+    assert_receive {:pulse, 1, 1600}
+
+    # Half left is halfway from the centre to the left lock (1600 → 1800),
+    # half right halfway to the right lock (1600 → 1200).
+    {:ok, _} = Buggy.Drive.steer(-0.5, Robot)
+    assert_receive {:pulse, 1, 1700}
+    {:ok, _} = Buggy.Drive.steer(0.5, Robot)
+    assert_receive {:pulse, 1, 1400}
+
+    # The locks don't move with it.
+    {:ok, _} = Buggy.Drive.steer(-1.0, Robot)
+    assert_receive {:pulse, 1, 1800}
+    {:ok, _} = Buggy.Drive.steer(1.0, Robot)
+    assert_receive {:pulse, 1, 1200}
   end
 end
